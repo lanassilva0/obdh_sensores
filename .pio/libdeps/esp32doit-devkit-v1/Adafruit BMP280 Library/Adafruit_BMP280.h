@@ -31,15 +31,16 @@
 /*!
  *  I2C ADDRESS/BITS/SETTINGS
  */
-#define BMP280_ADDRESS (0x77) /**< The default I2C address for the sensor. */
-#define BMP280_ADDRESS_ALT                                                     \
-  (0x76)                     /**< Alternative I2C address for the sensor. */
+#define BMP280_ADDRESS (0x76) /**< The default I2C address for the sensor. */
+#define BMP280_ADDRESS_ALT \
+  (0x77)                     /**< Alternative I2C address for the sensor. */
 #define BMP280_CHIPID (0x58) /**< Default chip ID. */
 
 /*!
  * Registers available on the sensor.
  */
-enum {
+enum
+{
   BMP280_REGISTER_DIG_T1 = 0x88,
   BMP280_REGISTER_DIG_T2 = 0x8A,
   BMP280_REGISTER_DIG_T3 = 0x8C,
@@ -66,7 +67,8 @@ enum {
 /*!
  *  Struct to hold calibration data.
  */
-typedef struct {
+typedef struct
+{
   uint16_t dig_T1; /**< dig_T1 cal register. */
   int16_t dig_T2;  /**<  dig_T2 cal register. */
   int16_t dig_T3;  /**< dig_T3 cal register. */
@@ -85,7 +87,8 @@ typedef struct {
 class Adafruit_BMP280;
 
 /** Adafruit Unified Sensor interface for temperature component of BMP280 */
-class Adafruit_BMP280_Temp : public Adafruit_Sensor {
+class Adafruit_BMP280_Temp : public Adafruit_Sensor
+{
 public:
   /** @brief Create an Adafruit_Sensor compatible object for the temp sensor
       @param parent A pointer to the BMP280 class */
@@ -99,7 +102,8 @@ private:
 };
 
 /** Adafruit Unified Sensor interface for pressure component of BMP280 */
-class Adafruit_BMP280_Pressure : public Adafruit_Sensor {
+class Adafruit_BMP280_Pressure : public Adafruit_Sensor
+{
 public:
   /** @brief Create an Adafruit_Sensor compatible object for the pressure sensor
       @param parent A pointer to the BMP280 class */
@@ -115,10 +119,12 @@ private:
 /**
  * Driver for the Adafruit BMP280 barometric pressure sensor.
  */
-class Adafruit_BMP280 {
+class Adafruit_BMP280
+{
 public:
   /** Oversampling rate for the sensor. */
-  enum sensor_sampling {
+  enum sensor_sampling
+  {
     /** No over-sampling. */
     SAMPLING_NONE = 0x00,
     /** 1x over-sampling. */
@@ -134,7 +140,8 @@ public:
   };
 
   /** Operating mode for the sensor. */
-  enum sensor_mode {
+  enum sensor_mode
+  {
     /** Sleep mode. */
     MODE_SLEEP = 0x00,
     /** Forced mode. */
@@ -146,7 +153,8 @@ public:
   };
 
   /** Filtering level for sensor data. */
-  enum sensor_filter {
+  enum sensor_filter
+  {
     /** No filtering. */
     FILTER_OFF = 0x00,
     /** 2x filtering. */
@@ -160,7 +168,8 @@ public:
   };
 
   /** Standby duration in ms */
-  enum standby_duration {
+  enum standby_duration
+  {
     /** 1 ms standby. */
     STANDBY_MS_1 = 0x00,
     /** 62.5 ms standby. */
@@ -214,7 +223,8 @@ private:
   Adafruit_BMP280_Pressure *pressure_sensor = NULL;
 
   /** Encapsulates the config register */
-  struct config {
+  struct config
+  {
     /** Initialize to power-on-reset state */
     config() : t_sb(STANDBY_MS_1), filter(FILTER_OFF), none(0), spi3w_en(0) {}
     /** Inactive duration (standby time) in normal mode */
@@ -230,7 +240,8 @@ private:
   };
 
   /** Encapsulates trhe ctrl_meas register */
-  struct ctrl_meas {
+  struct ctrl_meas
+  {
     /** Initialize to power-on-reset state */
     ctrl_meas()
         : osrs_t(SAMPLING_NONE), osrs_p(SAMPLING_NONE), mode(MODE_SLEEP) {}
