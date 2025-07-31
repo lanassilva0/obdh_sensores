@@ -12,53 +12,27 @@
 #define EPPROM_SIZE 512
 #define EEPROM_ADDR 0
 
-#define SCK 5   // GPIO5  SCK
-#define MISO 19 // GPIO19 MISO
-#define MOSI 27 // GPIO27 MOSI
 #define SS 18   // GPIO18 CS
 #define RST 14  // GPIO14 RESET
 #define DI00 26 // GPIO26 IRQ(Interrupt Request)
 
-#define BAND 433E6
-
-// Intervalo entre os envios
-#define INTERVAL 1 // em segundos
-
 Adafruit_BMP280 bmp;
 Adafruit_MPU6050 mpu;
 
-// conferir os pinos corretos
-// const int MICROSD_PIN_CHIP_SELECT = 21; // Pino serial
-// const int MICROSD_PIN_MOSI = 19;        // Pino serial
-// const int MICROSD_PIN_MISO = 18;        // Pino serial
-// const int MICROSD_PIN_SCK = 22;         // Clock pin
+// Micro SD Card
+//  * MicroSD VCC pin to ESP32 +5V
+//  * MicroSD GND pin to ESP32 GND
+//  * MicroSD MISO pin to ESP32 GPIO13
+//  * MicroSD MOSI pin to ESP32 GPIO12
+//  * MicroSD SCK pin to ESP32 GPIO14
+//  * MicroSD CS pin to ESP32 GPIO27
 
-// SPIClass spiSD(VSPI);
+const int MICROSD_PIN_CS = 27;   // Pino serial
+const int MICROSD_PIN_MOSI = 12; // Pino serial
+const int MICROSD_PIN_MISO = 13; // Pino serial
+const int MICROSD_PIN_SCK = 14;  // Clock pin
 
-// Compila apenas se MASTER estiver definido no arquivo principal
-// #ifdef MASTER
-
-long lastSendTime = 0;
-
-const String GETDATA = "getdata";
-const String SETDATA = "setdata=";
-
-// Configurações iniciais do LoRa
-// void setupLoRa()
-// {
-//   SPI.begin(SCK, MISO, MOSI, SS);
-//   LoRa.setPins(SS, RST, DI00);
-
-//   if (!LoRa.begin(BAND))
-//   {
-//     Serial.println("Erro ao iniciar LoRa");
-//     while (1)
-//       ;
-//   }
-
-//   LoRa.enableCrc();
-//   LoRa.receive();
-// }
+File myFile;
 
 void setup()
 {
@@ -68,17 +42,17 @@ void setup()
   Serial.begin(115200);
   delay(1000);
 
-  Serial.println("Inicializando MPU6050...");
+  // Serial.println("Inicializando MPU6050...");
 
-  if (!mpu.begin())
-  {
-    Serial.println("Não foi possível encontrar o MPU6050. Verifique a conexão.");
-    // while (1) delay(10);
-  }
+  // if (!mpu.begin())
+  // {
+  //   Serial.println("Não foi possível encontrar o MPU6050. Verifique a conexão.");
+  //   // while (1) delay(10);
+  // }
 
-  Serial.println("MPU6050 conectado com sucesso!");
+  // Serial.println("MPU6050 conectado com sucesso!");
 
-  delay(100);
+  // delay(100);
 
   if (!bmp.begin())
   {
@@ -86,28 +60,25 @@ void setup()
     // while (1)
   }
 
-  // if (!SD.begin(MICROSD_PIN_CHIP_SELECT, spiSD))
-  // {
-  //   Serial.println("Erro ao iniciar SD Card");
-  // }
-  // else
-  // {
-  //   Serial.println("Cartão SD inicializado");
-  // }
+  Serial.begin(9600);
+  delay(500);
+
+  if (!SD.begin(MICROSD_PIN_CS))
+  {
+    Serial.println("Erro ao iniciar SD Card");
+  }
+  else
+  {
+    Serial.println("Cartão SD inicializado");
+  }
+
+  writeFile("/test.txt", "ElectronicWings.com");
+  readFile("/test.txt");
 }
 
 long currentTime, lastTime;
 
-// void sendLoRaMessage(const StaticJsonDocument<512> message)
-// {
-//   LoRa.beginPacket();
-//   LoRa.print(message);
-//   LoRa.endPacket();
-//   Serial.print("Enviado: ");
-//   Serial.println(message);
-// }
-
-void salvaEEPROM(const StaticJsonDocument<512> &json)
+void saveEEPROM(const StaticJsonDocument<512> &json)
 {
   char jsonStr[512];
   serializeJson(json, jsonStr); // converte o JSON para string
@@ -118,34 +89,46 @@ void salvaEEPROM(const StaticJsonDocument<512> &json)
   EEPROM.commit();
 }
 
-StaticJsonDocument<512> geraArquivoJson(float temp, float pressao, float altitude, int type)
+void readFile(const char *path)
 {
-  StaticJsonDocument<512> doc;
-  if (type == 1)
+  myFile = SD.open(path);
+  if (myFile)
   {
-    doc["temperatura"] = temp;
-    doc["pressao"] = pressao;
-    doc["altitude"] = altitude;
+    Serial.printf("Lendo arquivo de %s\n", path);
+    while (myFile.available())
+    {
+      Serial.write(myFile.read());
+    }
+    myFile.close();
   }
-  // else if (type == 2)
-  // {
-  //   doc["accel_x"] = temp; // Usando temp como exemplo de aceleração X
-  //   doc["accel_y"] = pressao; // Usando pressao como exemplo de aceleração Y
-  //   doc["accel_z"] = altitude; // Usando altitude como exemplo de aceleração Z
-  // }
+  else
+  {
+    Serial.println("Erro ao abrir test.txt");
+  }
+}
 
-  serializeJson(doc, Serial);
-  Serial.println();
-
-  return doc;
+void writeFile(const char *path, const char *message)
+{
+  myFile = SD.open(path, FILE_WRITE);
+  if (myFile)
+  {
+    Serial.printf("Escrevendo em %s ", path);
+    myFile.println(message);
+    myFile.close();
+    Serial.println("concluído.");
+  }
+  else
+  {
+    Serial.println("Erro ao abrir o arquivo");
+    Serial.println(path);
+  }
 }
 
 void loop()
 {
-  StaticJsonDocument<512> jsonLeituraBMP;
-  StaticJsonDocument<512> jsonLeituraMPUAcceleration;
-  StaticJsonDocument<512> jsonLeituraMPUGyro;
-  StaticJsonDocument<512> jsonLeituraMPUTemperature;
+  StaticJsonDocument<512> jsonLeitura;
+
+  JsonObject leituraSensores = jsonLeitura.to<JsonObject>();
 
   currentTime = millis();
 
@@ -154,46 +137,52 @@ void loop()
     Serial.println("BMP280:");
     Serial.print("Temperatura : ");
     Serial.print(bmp.readTemperature());
+    leituraSensores["temperatura"] = bmp.readTemperature();
     Serial.println(" *C");
 
     Serial.print("Pressao : ");
     Serial.print(bmp.readPressure());
+    leituraSensores["pressao"] = bmp.readPressure();
     Serial.println(" Pa");
 
     Serial.print("Altitude : ");
     Serial.print(bmp.readAltitude(1013.25));
+    leituraSensores["altitude"] = bmp.readAltitude(1013.25);
     Serial.println(" m");
     Serial.println(" ");
 
-    jsonLeituraBMP = geraArquivoJson(bmp.readTemperature(), bmp.readPressure(), bmp.readAltitude(1013.25), 1);
-    salvaEEPROM(jsonLeituraBMP);
+    // sensors_event_t a, g, temp;
+    // mpu.getEvent(&a, &g, &temp);
 
-    sensors_event_t a, g, temp;
-    mpu.getEvent(&a, &g, &temp);
+    // Serial.println("MPU6050:");
+    // Serial.print("Accel X: ");
+    // leituraSensores["aceleracao"][0] = a.acceleration.x;
+    // Serial.print(a.acceleration.x);
+    // Serial.print(", Y: ");
+    // leituraSensores["aceleracao"][1] = a.acceleration.y;
+    // Serial.print(a.acceleration.y);
+    // Serial.print(", Z: ");
+    // leituraSensores["aceleracao"][2] = a.acceleration.z;
+    // Serial.println(a.acceleration.z);
 
-    Serial.println("MPU6050:");
-    Serial.print("Accel X: ");
-    Serial.print(a.acceleration.x);
-    Serial.print(", Y: ");
-    Serial.print(a.acceleration.y);
-    Serial.print(", Z: ");
-    Serial.println(a.acceleration.z);
+    // Serial.print("Gyro X: ");
+    // leituraSensores["giroscopio"][0] = g.gyro.x;
+    // Serial.print(g.gyro.x);
+    // Serial.print(", Y: ");
+    // leituraSensores["giroscopio"][1] = g.gyro.y;
+    // Serial.print(g.gyro.y);
+    // Serial.print(", Z: ");
+    // leituraSensores["giroscopio"][2] = g.gyro.z;
+    // Serial.println(g.gyro.z);
 
-    Serial.print("Gyro X: ");
-    Serial.print(g.gyro.x);
-    Serial.print(", Y: ");
-    Serial.print(g.gyro.y);
-    Serial.print(", Z: ");
-    Serial.println(g.gyro.z);
+    // Serial.print("Temp: ");
+    // Serial.print(temp.temperature);
+    // Serial.println(" °C");
 
-    Serial.print("Temp: ");
-    Serial.print(temp.temperature);
-    Serial.println(" °C");
+    String jsonStr;
+    serializeJson(jsonLeitura, jsonStr);
 
-    // jsonLeituraMPUAcceleration = geraArquivoJson(a.acceleration.x, a.acceleration.y, a.acceleration.z, 2);
-    // jsonLeituraMPUGyro = geraArquivoJson(g.gyro.x, g.gyro.y, g.gyro.z, 3);
-    // jsonLeituraMPUTemperature = geraArquivoJson(temp.temperature, 0, 0, 4);
-    // salvaEEPROM(jsonLeituraMPUAcceleration);
+    saveEEPROM(leituraSensores);
 
     Serial.println();
     delay(1000);
