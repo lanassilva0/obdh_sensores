@@ -5,7 +5,6 @@
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
 #include <EEPROM.h>
-#include <LoRa.h>
 #include <SPI.h>
 #include <SD.h>
 
@@ -128,7 +127,7 @@ void testeENS()
   }
 }
 
-void lerENS160()
+void lerENS160(JsonObject &leituraSensores)
 {
   if (ens160.available())
   {
@@ -156,6 +155,14 @@ void lerENS160()
     Serial.print("R HP3: ");
     Serial.print(ens160.getHP3());
     Serial.println("Ohm");
+
+    leituraSensores["aqi"] = ens160.getAQI();
+    leituraSensores["tvoc"] = ens160.getTVOC();
+    leituraSensores["eco2"] = ens160.geteCO2();
+    leituraSensores["hp0"] = ens160.getHP0();
+    leituraSensores["hp1"] = ens160.getHP1();
+    leituraSensores["hp2"] = ens160.getHP2();
+    leituraSensores["hp3"] = ens160.getHP3();
   }
   delay(1000);
 }
@@ -199,7 +206,7 @@ void varreduraDeEnderecos()
 // Varredura de endereços - FIM
 
 // BMP - INÍCIO
-void lerBMP280()
+void lerBMP280(JsonObject &leituraSensores)
 {
   Serial.println("BMP280:");
   Serial.print("Temperatura : ");
@@ -214,6 +221,10 @@ void lerBMP280()
   Serial.print(bmp.readAltitude());
   Serial.println(" m");
   Serial.println(" ");
+
+  leituraSensores["temperatura"] = bmp.readTemperature();
+  leituraSensores["pressao"] = bmp.readPressure();
+  leituraSensores["altitude"] = bmp.readAltitude(1013.25);
 }
 // BMP - FIM
 
@@ -332,7 +343,8 @@ void testeMPU6050()
   mpu_gyro = mpu.getGyroSensor();
   mpu_gyro->printSensorDetails();
 }
-void lerMPU6050()
+
+void lerMPU6050(JsonObject &leituraSensores)
 {
   sensors_event_t accel, gyro, temp;
   mpu.getEvent(&accel, &gyro, &temp);
@@ -361,6 +373,14 @@ void lerMPU6050()
   Serial.print(temp.temperature);
   Serial.println(" °C");
 
+  leituraSensores["aceleracao"][0] = accel.acceleration.x;
+  leituraSensores["aceleracao"][1] = accel.acceleration.y;
+  leituraSensores["aceleracao"][2] = accel.acceleration.z;
+  leituraSensores["giroscopio"][0] = gyro.gyro.x;
+  leituraSensores["giroscopio"][1] = gyro.gyro.y;
+  leituraSensores["giroscopio"][2] = gyro.gyro.z;
+  leituraSensores["temperatura"] = temp.temperature;
+
   Serial.println();
   delay(1000);
 }
@@ -376,6 +396,7 @@ void testeMQ135()
   MQ135.setA(102.2);
   MQ135.setB(-2.473); // Configure the equation to to calculate NH4 concentration
 }
+
 void lerMQ135()
 {
   MQ135.update();                            // Update data, the arduino will read the voltage from the analog pin
@@ -475,12 +496,14 @@ void loop()
   if (currentTime - lastTime > 2000)
   {
 
-    lerBMP280();
+    lerBMP280(leituraSensores);
     Serial.println("MPU6050 na protoboard:");
-    lerMPU6050();
+    lerMPU6050(leituraSensores);
     Serial.println("ENS160 na placa:");
-    lerENS160();
+    lerENS160(leituraSensores);
     // lerMQ135();
+
+    saveEEPROM(jsonLeitura);
 
     Serial.println();
     delay(1000);
