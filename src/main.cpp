@@ -22,72 +22,17 @@ Adafruit_MPU6050 mpu;
 // Micro SD Card
 //  * MicroSD VCC pin to ESP32 +5V
 //  * MicroSD GND pin to ESP32 GND
-//  * MicroSD MISO pin to ESP32 GPIO13
-//  * MicroSD MOSI pin to ESP32 GPIO12
-//  * MicroSD SCK pin to ESP32 GPIO14
-//  * MicroSD CS pin to ESP32 GPIO27
+//  * MicroSD MISO pin to ESP32 GPIO19
+//  * MicroSD MOSI pin to ESP32 GPIO23
+//  * MicroSD SCK pin to ESP32 GPIO18
+//  * MicroSD CS pin to ESP32 GPIO5
 
-const int MICROSD_PIN_CS = 27;   // Pino serial
-const int MICROSD_PIN_MOSI = 12; // Pino serial
-const int MICROSD_PIN_MISO = 13; // Pino serial
-const int MICROSD_PIN_SCK = 14;  // Clock pin
+const int MICROSD_PIN_CS = 5;    // Pino serial
+const int MICROSD_PIN_MOSI = 23; // Pino serial
+const int MICROSD_PIN_MISO = 19; // Pino serial
+const int MICROSD_PIN_SCK = 18;  // Clock pin
 
 File myFile;
-
-void setup()
-{
-
-  EEPROM.begin(EPPROM_SIZE);
-  // setupLoRa();
-  Serial.begin(115200);
-  delay(1000);
-
-  // Serial.println("Inicializando MPU6050...");
-
-  // if (!mpu.begin())
-  // {
-  //   Serial.println("Não foi possível encontrar o MPU6050. Verifique a conexão.");
-  //   // while (1) delay(10);
-  // }
-
-  // Serial.println("MPU6050 conectado com sucesso!");
-
-  // delay(100);
-
-  if (!bmp.begin())
-  {
-    Serial.println("Cannot connect to BMP280");
-    // while (1)
-  }
-
-  Serial.begin(9600);
-  delay(500);
-
-  if (!SD.begin(MICROSD_PIN_CS))
-  {
-    Serial.println("Erro ao iniciar SD Card");
-  }
-  else
-  {
-    Serial.println("Cartão SD inicializado");
-  }
-
-  writeFile("/test.txt", "ElectronicWings.com");
-  readFile("/test.txt");
-}
-
-long currentTime, lastTime;
-
-void saveEEPROM(const StaticJsonDocument<512> &json)
-{
-  char jsonStr[512];
-  serializeJson(json, jsonStr); // converte o JSON para string
-  for (int i = 0; i < strlen(jsonStr); i++)
-  {
-    EEPROM.write(EEPROM_ADDR + i, jsonStr[i]);
-  }
-  EEPROM.commit();
-}
 
 void readFile(const char *path)
 {
@@ -122,6 +67,57 @@ void writeFile(const char *path, const char *message)
     Serial.println("Erro ao abrir o arquivo");
     Serial.println(path);
   }
+}
+
+void setup()
+{
+
+  EEPROM.begin(EPPROM_SIZE);
+  Serial.begin(115200);
+  delay(1000);
+
+  // Serial.println("Inicializando MPU6050...");
+
+  // if (!mpu.begin())
+  // {
+  //   Serial.println("Não foi possível encontrar o MPU6050. Verifique a conexão.");
+  //   // while (1) delay(10);
+  // }
+
+  // Serial.println("MPU6050 conectado com sucesso!");
+
+  // delay(100);
+
+  if (!bmp.begin())
+  {
+    Serial.println("Cannot connect to BMP280");
+    // while (1)
+  }
+
+  if (!SD.begin(MICROSD_PIN_CS))
+  {
+    Serial.println("Erro ao iniciar SD Card");
+  }
+  else
+  {
+    Serial.println("Cartão SD inicializado");
+
+    writeFile("/test.txt", "Testando escrita no cartão SD");
+    readFile("/test.txt");
+  }
+}
+
+long currentTime, lastTime;
+
+void saveEEPROM(const StaticJsonDocument<512> &json)
+{
+  char jsonStr[512];
+  serializeJson(json, jsonStr); // converte o JSON para string
+  for (int i = 0; i < strlen(jsonStr); i++)
+  {
+    EEPROM.write(EEPROM_ADDR + i, jsonStr[i]);
+  }
+  EEPROM.commit();
 }
 
 void loop()
